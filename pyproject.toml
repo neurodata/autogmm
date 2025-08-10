@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autogmm"
+version = "0.1.0"
+description = "Automatic Gaussian Mixture Modeling in Python"
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
+authors = [{name="Tingshan Liu"}]
+requires-python = ">=3.9"
+dependencies = [
+  "numpy>=1.21",
+  "scipy>=1.8",
+  "scikit-learn>=1.1",
+  "joblib>=1.1"
+]
+keywords = ["clustering","gmm","mixture","model selection"]
+
+[project.urls]
+Homepage = "https://github.com/tingshanL/autogmm"
+Issues   = "https://github.com/tingshanL/autogmm/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "black", "ruff"]
+docs = ["sphinx", "numpydoc", "sphinx-rtd-theme"]
