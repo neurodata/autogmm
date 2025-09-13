@@ -6,6 +6,7 @@ from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
+from graspologic.types import Dict, List, Tuple
 from joblib import Parallel, delayed
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.exceptions import ConvergenceWarning
@@ -18,8 +19,6 @@ from sklearn.mixture._gaussian_mixture import (
 from sklearn.model_selection import ParameterGrid
 from sklearn.utils import check_scalar
 from typing_extensions import Literal
-
-from graspologic.types import Dict, List, Tuple
 
 from .base import BaseCluster
 
@@ -70,9 +69,10 @@ class AutoGMMCluster(BaseCluster):
         If a list/array, it must be a list/array of strings containing only
         'euclidean', 'manhattan', 'cosine', and/or 'none'.
 
-        Note that cosine similarity can only work when all of the rows are not the zero vector.
-        If the input matrix has a zero row, cosine similarity will be skipped and a warning will
-        be thrown.
+        Note that cosine similarity can only work when all of the rows
+        are not the zero vector.
+        If the input matrix has a zero row,
+        cosine similarity will be skipped and a warning will be thrown.
 
     linkage : {'ward','complete','average','single', 'all' (default)}, optional
         String or list/array describing the type of linkages to use in agglomeration.
@@ -241,9 +241,7 @@ class AutoGMMCluster(BaseCluster):
                 msg = "min_components must be >= 1."
                 raise ValueError(msg)
         else:
-            msg = "min_components must be an integer, not {}.".format(
-                type(min_components)
-            )
+            msg = f"min_components must be an integer, not {type(min_components)}."
             raise TypeError(msg)
 
         if isinstance(max_components, int):
@@ -254,8 +252,9 @@ class AutoGMMCluster(BaseCluster):
                 msg = "min_components must be less than or equal to max_components."
                 raise ValueError(msg)
         elif max_components is not None:
-            msg = "max_components must be an integer or None, not {}.".format(
-                type(max_components)
+            msg = (
+                "max_components must be an integer or None, ",
+                f"not {type(max_components)}.",
             )
             raise TypeError(msg)
 
@@ -268,7 +267,7 @@ class AutoGMMCluster(BaseCluster):
                 affinity = [affinity]
         else:
             msg = "affinity must be a numpy array, a list, or "
-            msg += "string, not {}".format(type(affinity))
+            msg += f"string, not {type(affinity)}"
             raise TypeError(msg)
 
         for aff in affinity:
@@ -277,10 +276,10 @@ class AutoGMMCluster(BaseCluster):
                     "affinity must be one of "
                     + '["euclidean","manhattan","cosine","none"]'
                 )
-                msg += " not {}".format(aff)
+                msg += f" not {aff}"
                 raise ValueError(msg)
 
-        if ("ward" in linkage) and not ("euclidean" in affinity):
+        if ("ward" in linkage) and "euclidean" not in affinity:
             msg = (
                 'if "ward" is a linkage option, '
                 + '"euclidean" must be an affinity option'
@@ -296,7 +295,7 @@ class AutoGMMCluster(BaseCluster):
                 linkage = [linkage]
         else:
             msg = "linkage must be a numpy array, a list, or "
-            msg += "string, not {}".format(type(linkage))
+            msg += f"string, not {type(linkage)}"
             raise TypeError(msg)
 
         for link in linkage:
@@ -305,7 +304,7 @@ class AutoGMMCluster(BaseCluster):
                     "linkage must be one of "
                     + '["ward", "complete", "average", "single"]'
                 )
-                msg += " not {}".format(link)
+                msg += f" not {link}"
                 raise ValueError(msg)
 
         if isinstance(covariance_type, (np.ndarray, list)):
@@ -317,7 +316,7 @@ class AutoGMMCluster(BaseCluster):
                 covariance_type = [covariance_type]
         else:
             msg = "covariance_type must be a numpy array, a list, or "
-            msg += "string, not {}".format(type(covariance_type))
+            msg += f"string, not {type(covariance_type)}"
             raise TypeError(msg)
 
         for cov in covariance_type:
@@ -326,7 +325,7 @@ class AutoGMMCluster(BaseCluster):
                     "covariance structure must be one of "
                     + '["spherical", "diag", "tied", "full"]'
                 )
-                msg += " not {}".format(cov)
+                msg += f" not {cov}"
                 raise ValueError(msg)
 
         new_covariance_type = []
@@ -344,12 +343,12 @@ class AutoGMMCluster(BaseCluster):
                 raise TypeError(msg)
         elif label_init is not None:
             msg = "label_init must be a 1-D numpy array, a list, or None,"
-            msg += "not {}".format(type(label_init))
+            msg += f"not {type(label_init)}"
             raise TypeError(msg)
 
         if selection_criteria not in ["aic", "bic"]:
             msg = "selection_criteria must be one of " + '["aic, "bic"]'
-            msg += " not {}".format(selection_criteria)
+            msg += f" not {selection_criteria}"
             raise ValueError(msg)
 
         # Adjust elements in label_init to range(n_components of label_init)
@@ -362,7 +361,7 @@ class AutoGMMCluster(BaseCluster):
                 or max_components != n_components_init
             ):
                 msg = "min_components and max_components must equal "
-                msg += " the number of init labels: {}".format(n_components_init)
+                msg += f" the number of init labels: {n_components_init}"
                 raise ValueError(msg)
 
             labels_init = np.copy(label_init)
@@ -511,16 +510,15 @@ class AutoGMMCluster(BaseCluster):
         if upper_ncomponents > X.shape[0]:
             if self.max_components is None:
                 msg = "if max_components is None then min_components must be >= "
-                msg += "n_samples, but min_components = {}, n_samples = {}".format(
-                    upper_ncomponents, X.shape[0]
-                )
+                msg += f"n_samples, but min_components = {upper_ncomponents},"
+                msg += f"n_samples = {X.shape[0]}"
             else:
                 msg = "max_components must be <= n_samples, but max_components = "
-                msg += "{}, n_samples = {}".format(upper_ncomponents, X.shape[0])
+                msg += f"{upper_ncomponents}, n_samples = {X.shape[0]}"
             raise ValueError(msg)
         elif lower_ncomponents > X.shape[0]:
             msg = "min_components must be <= n_samples, but min_components = "
-            msg += "{}, n_samples = {}".format(upper_ncomponents, X.shape[0])
+            msg += f"{upper_ncomponents}, n_samples = {X.shape[0]}"
             raise ValueError(msg)
         # check if X contains the 0 vector
         if np.any(~X.any(axis=1)) and ("cosine" in self.affinity):
@@ -530,7 +528,10 @@ class AutoGMMCluster(BaseCluster):
                 )
             if isinstance(self.affinity, list):
                 self.affinity.remove("cosine")
-            warnings.warn("X contains a zero vector, will not run cosine affinity.")
+            warnings.warn(
+                "X contains a zero vector, will not run cosine affinity.",
+                stacklevel=2,
+            )
 
         label_init = self.label_init
         if label_init is not None:
@@ -762,10 +763,12 @@ def _hierarchical_labels(
         inds = np.where(np.isin(hierarchical_labels[:, n], children[n, :]))[0]
         hierarchical_labels[inds, -1] = n_samples + n
         if n < merge_end:
-            hierarchical_labels = np.hstack((
-                hierarchical_labels,
-                hierarchical_labels[:, -1].reshape((-1, 1)),
-            ))
+            hierarchical_labels = np.hstack(
+                (
+                    hierarchical_labels,
+                    hierarchical_labels[:, -1].reshape((-1, 1)),
+                )
+            )
 
     hierarchical_labels = hierarchical_labels[:, merge_start:]
     for i in range(hierarchical_labels.shape[1]):

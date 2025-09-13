@@ -28,3 +28,29 @@ where = ["src"]
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov", "black", "ruff"]
 docs = ["sphinx", "numpydoc", "sphinx-rtd-theme"]
+experiments = [
+  "matplotlib",
+  "pandas",
+  "graspologic",
+  "seaborn",
+  "tqdm",
+  "scipy",
+  "joblib",
+  "nbformat",
+  "nbconvert",
+  "ipykernel",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py39","py310","py311","py312"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+lint.select = ["E","F","I","UP","B"]
+lint.ignore = ["E203","E266","E501"]
+exclude = ["docs/_build"]
+
+[tool.ruff.isort]
+known-first-party = ["autogmm"]

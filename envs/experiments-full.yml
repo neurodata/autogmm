@@ -1,0 +1,11 @@
+name: autogmm-exp-full
+channels: [conda-forge]
+dependencies:
+  - python=3.11
+  - pip
+  - r-base=4.3.*
+  - r-mclust
+  - r-jsonlite
+  - rpy2=3.5.*
+  - pip:
+      - -e ..[experiments]

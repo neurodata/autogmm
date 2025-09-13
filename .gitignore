@@ -1,9 +1,37 @@
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-build/
-.ipynb_checkpoints/
+# OS/editor cruft
 .DS_Store
-.venv/
+**/.DS_Store
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
 .env/
+.venv/
+.mypy_cache/
+.pytest_cache/
+
+# Build/dist
+build/
+dist/
+*.egg-info/
+docs/_build/
+.build/
+
+# Notebook outputs
+out/
+
+# Conda temp manifests
+envs/condaenv.*.requirements.txt
+
+# Lint/test caches
+.ruff_cache/
+.coverage
+coverage.xml
+.tox/
+
+# Tooling
+.python-version

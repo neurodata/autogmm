@@ -1,0 +1,5 @@
+include LICENSE README.md CITATION.cff
+recursive-include experiments *.ipynb *.py *.sh *.txt *.md *.csv
+recursive-include scripts *.py *.sh
+recursive-include docs *.rst *.py conf.py
+prune docs/_build

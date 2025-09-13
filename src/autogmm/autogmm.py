@@ -1,48 +1,24 @@
-import numpy as np
-import warnings
 import logging
+import warnings
 
-from scipy.linalg import eigh, pinvh
-from scipy.cluster.hierarchy import linkage as scipy_linkage, fcluster
-from scipy.spatial.distance import pdist, squareform
-from scipy.sparse.csgraph import minimum_spanning_tree
-
-from sklearn.mixture import GaussianMixture
-from sklearn.base import BaseEstimator, ClusterMixin
-from sklearn.utils import check_array
-from sklearn.cluster import KMeans
-from sklearn.exceptions import ConvergenceWarning
-from sklearn.neighbors import kneighbors_graph
-from sklearn.decomposition import PCA
-from scipy.sparse.linalg import eigsh
-from numpy.linalg import inv
-from sklearn.manifold import SpectralEmbedding
-from sklearn.covariance import OAS
+import numpy as np
 from joblib import Parallel, delayed
-
-from sklearn.metrics import adjusted_rand_score
-
-
-# def mahalanobis_ward(X):
-#     cov    = np.cov(X, rowvar=False)
-#     ev, evec = eigh(cov)
-#     ev      = np.maximum(ev, 1e-10)
-#     inv_sqrt = evec @ np.diag(1.0/np.sqrt(ev)) @ evec.T
-#     return (X - X.mean(0)) @ inv_sqrt
-
-# def ward_mahalanobis_linkage(X, reg_covar=1e-10, method='ward'):
-#     # 1) estimate full covariance of X
-#     cov = np.cov(X, rowvar=False)
-
-#     # 2) regularize & invert to get the precision matrix VI
-#     VI  = pinvh(cov + reg_covar * np.eye(cov.shape[0]))
-#     # VI  = pinvh(cov)
-
-#     # 3) compute pairwise Mahalanobis distances using that VI
-#     D   = pdist(X, metric='mahalanobis', VI=VI)
-
-#     # 4) feed the 1D condensed D into scipy linkage
-#     return scipy_linkage(D, method=method)
+from numpy.linalg import inv
+from scipy.cluster.hierarchy import fcluster
+from scipy.cluster.hierarchy import linkage as scipy_linkage
+from scipy.linalg import eigh, pinvh
+from scipy.sparse.csgraph import minimum_spanning_tree
+from scipy.sparse.linalg import eigsh
+from scipy.spatial.distance import pdist, squareform
+from sklearn.base import BaseEstimator, ClusterMixin
+from sklearn.cluster import KMeans
+from sklearn.covariance import OAS
+from sklearn.decomposition import PCA
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.manifold import SpectralEmbedding
+from sklearn.mixture import GaussianMixture
+from sklearn.neighbors import kneighbors_graph
+from sklearn.utils import check_array
 
 
 def ward_mahalanobis_linkage(X, method="ward"):
@@ -92,7 +68,7 @@ def get_precisions_init(covs, cov_type, n_features, eigen_thres=False, reg_covar
         def invf(C):
             try:
                 return np.linalg.inv(C)
-            except:
+            except np.linalg.LinAlgError:
                 return pinvh(C + reg_covar * np.eye(n_features))
 
     else:
@@ -157,6 +133,7 @@ class AutoGMM(BaseEstimator, ClusterMixin):
         n_jobs=1,
         early_stop_delta=1e-3,
         y=None,
+        covariances=None,
     ):
         self.min_components = min_components
         self.max_components = max_components
@@ -182,6 +159,41 @@ class AutoGMM(BaseEstimator, ClusterMixin):
         self.n_jobs = n_jobs
         self.early_stop_delta = early_stop_delta
         self.y = y
+
+        _allowed_covs = ("spherical", "diag", "tied", "full")
+        if covariances is None:
+            self.covariances = list(_allowed_covs)
+        else:
+            if not isinstance(covariances, (list, tuple)):
+                raise TypeError("covariances must be a list/tuple of strings or None.")
+            covs = list(covariances)
+            bad = [c for c in covs if c not in _allowed_covs]
+            if bad:
+                raise ValueError(
+                    f"Unknown covariance types: {bad}. Allowed: {_allowed_covs}"
+                )
+            if not covs:
+                raise ValueError("covariances must be non-empty or None.")
+            self.covariances = covs
+
+        if not isinstance(self.min_components, int) or self.min_components < 1:
+            raise ValueError("min_components must be a positive integer.")
+        if not isinstance(self.max_components, int) or self.max_components < 1:
+            raise ValueError("max_components must be a positive integer.")
+        if self.min_components > self.max_components:
+            raise ValueError("min_components must be <= max_components.")
+
+        if not isinstance(self.n_init_kmeans, int) or self.n_init_kmeans < 1:
+            raise ValueError("n_init_kmeans must be >= 1.")
+
+        if not isinstance(self.reg_covar, (int, float)) or self.reg_covar < 0:
+            raise ValueError("reg_covar must be non-negative.")
+
+        if (
+            not isinstance(self.early_stop_delta, (int, float))
+            or self.early_stop_delta < 0
+        ):
+            raise ValueError("early_stop_delta must be >= 0.")
 
     def _fit_single(self, X, cov_type, k, labels_init):
         if len(np.unique(labels_init)) != k:
@@ -236,11 +248,8 @@ class AutoGMM(BaseEstimator, ClusterMixin):
                         continue
 
                     if aff == "mahalanobis":
-                        # Z = scipy_linkage(mahalanobis_ward(X), method=link)
-                        # Z = ward_mahalanobis_linkage(X, reg_covar=self.reg_covar, method=link)
                         Z = ward_mahalanobis_linkage(X, method=link)
                     elif link == "ward":
-                        # Z = scipy_linkage(X, method='ward')
                         # reuse the one Euclidean‐Ward you already computed
                         Z = Z_euclid_ward
                     else:
@@ -266,7 +275,7 @@ class AutoGMM(BaseEstimator, ClusterMixin):
 
         # — assemble all inits —
         tasks = []
-        for cov in ("full", "tied", "spherical", "diag"):
+        for cov in self.covariances:
             if self.init_agglomerative:
                 for (_, _, k), labs in labels_agglom.items():
                     tasks.append((cov, k, labs))
@@ -277,10 +286,14 @@ class AutoGMM(BaseEstimator, ClusterMixin):
         # — fit in parallel —
         self.best_score_, self.best_model_ = np.inf, None
         for gmm, score in Parallel(n_jobs=self.n_jobs)(
-            delayed(self._fit_single)(X, cov, k, l) for cov, k, l in tasks
+            delayed(self._fit_single)(X, cov, k, lbl) for cov, k, lbl in tasks
         ):
             if gmm is not None and score + self.early_stop_delta < self.best_score_:
                 self.best_score_, self.best_model_ = score, gmm
+
+        self.labels_ = self.best_model_.predict(X)
+        self.n_components_ = getattr(self.best_model_, "n_components", None)
+        self.covariance_type_ = getattr(self.best_model_, "covariance_type", None)
 
         return self
 
@@ -430,6 +443,10 @@ class KernelAutoGMM(ClusterMixin):
             best_model,
             best_method,
         )
+        self.labels_ = self.best_model_.predict(X)
+        self.n_components_ = getattr(self.best_model_, "n_components", None)
+        self.covariance_type_ = getattr(self.best_model_, "covariance_type", None)
+
         return self
 
     def predict(self, X):

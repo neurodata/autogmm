@@ -13,8 +13,8 @@ from autogmm import AutoGMM
 from sklearn.datasets import make_blobs
 
 X, _ = make_blobs(
-                 n_samples=1000,   
-                 centers=4, 
+                 n_samples=1000,
+                 centers=4,
                  cluster_std=1.2,
                  random_state=0
 )
@@ -42,7 +42,7 @@ labels = AutoGMM(
 
 
 ### Documentation
-- API & Guides: https://github.com/tingshanL/autogmm/
+- API & Guides: https://github.com/neurodata/autogmm/
 - Examples: [examples/](examples) (benchmarks; stress tests; runtime scaling)
 - Reproducibility: [scripts/reproduce.sh](scripts/reproduce.sh) (regenerates all figures with fixed seeds)
 
@@ -64,4 +64,4 @@ Issues and PRs are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 ```
 
 ### License
-MIT license. See [LICENSE](LICENSE).
+BSD 3-Clause License. See [LICENSE](LICENSE).
