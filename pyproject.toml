@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autogmm"
-version = "0.1.0"
+version = "0.1.0rc1"
 description = "Automatic Gaussian Mixture Modeling in Python"
 readme = "README.md"
 license = {text = "BSD-3-Clause"}
@@ -20,10 +20,14 @@ keywords = ["clustering","gmm","mixture","model selection"]
 
 [project.urls]
 Homepage = "https://github.com/tingshanL/autogmm"
+Repository = "https://github.com/tingshanL/autogmm"
 Issues   = "https://github.com/tingshanL/autogmm/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools]
+include-package-data = true
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov", "black", "ruff"]
