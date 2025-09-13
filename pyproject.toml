@@ -19,9 +19,9 @@ dependencies = [
 keywords = ["clustering","gmm","mixture","model selection"]
 
 [project.urls]
-Homepage = "https://github.com/tingshanL/autogmm"
-Repository = "https://github.com/tingshanL/autogmm"
-Issues   = "https://github.com/tingshanL/autogmm/issues"
+Homepage = "https://github.com/neurodata/autogmm"
+Repository = "https://github.com/neurodata/autogmm"
+Issues   = "https://github.com/neurodata/autogmm/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -59,7 +59,7 @@ Issues and PRs are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
   title   = {AutoGMM: Automatic Gaussian Mixture Modeling in Python},
   author  = {Liu, Tingshan and Athey, Thomas L. and Pedigo, Benjamin D. and Vogelstein, Joshua T.},
   year    = {2025},
-  url     = {https://github.com/tingshanL/autogmm}
+  url     = {https://github.com/neurodata/autogmm}
 }
 ```
 
