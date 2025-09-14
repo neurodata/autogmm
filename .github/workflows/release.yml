@@ -24,10 +24,23 @@ jobs:
       - name: Upgrade packaging tooling
         run: python -m pip install --upgrade pip setuptools wheel build twine
 
+      - name: Clean build dirs
+        run: rm -rf dist build src/autogmm.egg-info
+
       - name: Build sdist and wheel
         run: python -m build --no-isolation
 
-      - name: Twine check
+      - name: List dist contents
+        run: ls -l dist
+
+      # Compute the exact wheel path and export it so all later steps use the SAME file
+      - name: Capture wheel path
+        run: |
+          WHEEL="$(ls dist/*.whl | head -n 1)"
+          echo "WHEEL=$WHEEL" >> "$GITHUB_ENV"
+          echo "Using wheel: $WHEEL"
+
+      - name: Twine check (mirror action)
         run: twine check dist/*
 
       - name: Publish to PyPI
@@ -38,16 +51,18 @@ jobs:
       - name: Inspect wheel METADATA
         run: |
             python - << 'PY'
-            import glob, zipfile, sys
-            w = sorted(glob.glob("dist/*.whl"))[-1]
-            print("Wheel:", w)
-            with zipfile.ZipFile(w) as z:
-                meta = [n for n in z.namelist() if n.endswith("METADATA")]
-                if not meta:
+            import os, zipfile, sys
+            wheel = os.environ.get("WHEEL")
+            print("Inspecting wheel:", wheel)
+            if not wheel or not os.path.exists(wheel):
+                print("Wheel not found", file=sys.stderr); sys.exit(1)
+            with zipfile.ZipFile(wheel) as z:
+                metas = [n for n in z.namelist() if n.endswith("METADATA")]
+                if not metas:
                     print("No METADATA in wheel!", file=sys.stderr); sys.exit(1)
-                data = z.read(meta[0]).decode()
-                for k in ("Name:", "Version:"):
-                    print(k, "FOUND" if k in data else "MISSING")
-                print("\n--- first 40 lines ---")
+                data = z.read(metas[0]).decode("utf-8", "replace")
+                print([l for l in data.splitlines() if l.startswith("Name:")][:1] or ["Name: MISSING"])
+                print([l for l in data.splitlines() if l.startswith("Version:")][:1] or ["Version: MISSING"])
+                print("\n--- first 40 lines of METADATA ---")
                 print("\n".join(data.splitlines()[:40]))
             PY
