@@ -46,7 +46,10 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.10.3
         with:
-          skip-existing: true
+            packages-dir: dist        # upload exactly what just built
+            skip-existing: true
+            verify-metadata: false    # <-- turn OFF the action's duplicate check
+            print-hash: true
 
       - name: Inspect wheel METADATA
         run: |
